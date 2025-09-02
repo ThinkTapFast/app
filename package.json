@@ -6,12 +6,23 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:fix": "next lint --fix",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,md}\"",
+    "docker:build": "docker build -t thinktapfast-app .",
+    "docker:run": "docker run -p 3000:3000 --env-file .env.production.local thinktapfast-app",
+    "docker:build:dev": "docker build -t thinktapfast-app-dev -f Dockerfile.dev .",
+    "docker:run:dev:cmd": "docker run -p 3000:3000 --env-file .env.development.local -v %cd%:/app -v /app/node_modules thinktapfast-app-dev",
+    "docker:run:dev:powershell": "powershell -ExecutionPolicy Bypass -File scripts/docker-dev.ps1",
+    "docker:run:dev:mac": "bash scripts/docker-dev.sh",
+    "docker:run:dev:linux": "bash scripts/docker-dev.sh"
   },
   "dependencies": {
+    "next": "15.5.2",
+    "prettier-plugin-tailwindcss": "^0.6.14",
     "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "15.5.2"
+    "react-dom": "19.1.0"
   },
   "devDependencies": {
     "typescript": "^5",
