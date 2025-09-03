@@ -76,21 +76,13 @@ Visit [http://localhost:3000](http://localhost:3000) to see the app.
 > [!NOTE]
 > Plz see the .env.development and .env.production files for all available environment variables.
 
-## 📊 API Rate Limits
-
-| Plan     | Daily Requests | Rate Limit |
-| -------- | -------------- | ---------- |
-| Free     | 50             | 30/min     |
-| Pro      | 1,000          | 120/min    |
-| Business | 10,000         | 500/min    |
-
 ## 🤝 Contributing
 
-This is a private repository. For bug reports or feature requests, please contact the team.
+This is a private repository. Only authorized organization members can access this project. For bug reports or feature requests, please contact the team via GitHub or your organization admin.
 
 ## 📄 License
 
-Private - All rights reserved
+Private - Access restricted to authorized organization members. All rights reserved.
 
 ---
 
