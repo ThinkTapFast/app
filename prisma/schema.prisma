@@ -1,0 +1,171 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../node_modules/.prisma/client"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+
+  clerkId   String   @unique
+  email     String   @unique
+  username  String?  @unique
+  firstName String?
+  lastName  String?
+  fullname  String?
+  image     String?
+
+  emailVerified Boolean  @default(false)
+  phoneNumber   String?
+  isActive      Boolean  @default(true)
+  lastSignIn    DateTime?
+
+  platformRole PlatformRole @default(USER)
+
+  billingCustomerId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  memberships Membership[]
+
+  @@map("users")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  plan      Plan     @default(FREE)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  memberships Membership[]
+  workspaces  Workspace[]
+  usage       Usage?
+  brandVoice  BrandVoice?
+  apiKeys     ApiKey[]
+  
+  @@map("organizations")
+}
+
+model Membership {
+  id     String @id @default(cuid())
+  role   Role
+  userId String
+  orgId  String
+  
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, orgId])
+  @@map("memberships")
+}
+
+enum PlatformRole {
+  USER
+  SUPER_ADMIN
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+  DEVELOPER
+}
+
+enum Plan {
+  FREE
+  PRO
+  BUSINESS
+  AGENCY
+  CUSTOM
+}
+
+model Workspace {
+  id     String @id @default(cuid())
+  name   String
+  orgId  String
+  
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  projects     Project[]
+  
+  @@map("workspaces")
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  workspaceId String
+  projectType String   // blog, ads, product, social, etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contents  Content[]
+  
+  @@map("projects")
+}
+
+model Content {
+  id        String   @id @default(cuid())
+  kind      String   // post, ad, email, caption
+  input     Json
+  output    Json     // versions history
+  status    String   // draft, ready, scheduled, published
+  projectId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@map("contents")
+}
+
+model BrandVoice {
+  id    String @id @default(cuid())
+  orgId String @unique
+  docs  Json   // embeddings source refs
+  
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  @@map("brand_voices")
+}
+
+model Usage {
+  orgId          String   @id
+  periodStart    DateTime
+  periodEnd      DateTime
+  tokensIn       Int      @default(0)
+  tokensOut      Int      @default(0)
+  itemsGenerated Int      @default(0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  @@map("usage")
+}
+
+model ApiKey {
+  id        String    @id @default(cuid())
+  orgId     String
+  tokenHash String    @unique
+  label     String?
+  createdAt DateTime  @default(now())
+  lastUsed  DateTime?
+  
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+  
+  @@map("api_keys")
+}
