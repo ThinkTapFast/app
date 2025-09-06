@@ -37,6 +37,7 @@
     "docker:run:dev:linux": "bash scripts/docker-dev.sh"
   },
   "dependencies": {
+    "@clerk/nextjs": "^6.31.9",
     "@neondatabase/serverless": "^1.0.1",
     "@prisma/adapter-neon": "^6.15.0",
     "@prisma/client": "^6.15.0",
