@@ -1,5 +1,11 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// prisma/schema.prisma — scalable, role-based, multi-tenant schema
+// Notes:
+// - Introduces flexible RBAC with Role/Permission at three scopes (ORG/WORKSPACE/PROJECT)
+// - Adds WorkspaceMembership & ProjectMembership
+// - Adds soft deletes, audit logs, versioning, tags, notifications, API key scopes, analytics events
+// - Keeps your original tables/fields where possible; mapped names preserved via @@map
+
+// -------------------- Generator & Datasource --------------------
 
 generator client {
   provider        = "prisma-client-js"
@@ -13,75 +19,11 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model User {
-  id        String   @id @default(cuid())
-
-  clerkId   String   @unique
-  email     String   @unique
-  username  String?  @unique
-  firstName String?
-  lastName  String?
-  fullname  String?
-  image     String?
-
-  emailVerified Boolean  @default(false)
-  phoneNumber   String?
-  isActive      Boolean  @default(true)
-  lastSignIn    DateTime?
-
-  platformRole PlatformRole @default(USER)
-
-  billingCustomerId String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  memberships Membership[]
-
-  @@map("users")
-}
-
-model Organization {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  plan      Plan     @default(FREE)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  memberships Membership[]
-  workspaces  Workspace[]
-  usage       Usage?
-  brandVoice  BrandVoice?
-  apiKeys     ApiKey[]
-  
-  @@map("organizations")
-}
-
-model Membership {
-  id     String @id @default(cuid())
-  role   Role
-  userId String
-  orgId  String
-  
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, orgId])
-  @@map("memberships")
-}
+// -------------------- Enums --------------------
 
 enum PlatformRole {
   USER
-  SUPER_ADMIN
-}
-
-enum Role {
-  OWNER
-  ADMIN
-  EDITOR
-  VIEWER
-  DEVELOPER
+  SUPER_ADMIN // platform-level (not per org)
 }
 
 enum Plan {
@@ -92,14 +34,127 @@ enum Plan {
   CUSTOM
 }
 
-model Workspace {
+enum Scope { // RBAC scope for roles/permissions
+  ORGANIZATION
+  WORKSPACE
+  PROJECT
+}
+
+// -------------------- Core: Users & Orgs --------------------
+
+model User {
+  id           String        @id @default(cuid())
+  clerkId      String        @unique
+  email        String        @unique
+  username     String?       @unique
+  firstName    String?
+  lastName     String?
+  fullname     String?
+  image        String?
+
+  emailVerified Boolean      @default(false)
+  phoneNumber   String?
+  isActive      Boolean      @default(true)
+  lastSignIn    DateTime?
+
+  platformRole PlatformRole  @default(USER)
+
+  billingCustomerId String?
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  memberships           Membership[]
+  workspaceMemberships  WorkspaceMembership[]
+  projectMemberships    ProjectMembership[]
+  auditLogs             AuditLog[]        @relation("AuditActorLogs")
+  notifications         Notification[]
+  comments              Comment[]
+  contentVersions       ContentVersion[]  @relation("ContentVersionAuthor")
+  usageEvents           UsageEvent[]
+
+  @@index([email])
+  @@map("users")
+}
+
+model Organization {
+  id        String      @id @default(cuid())
+  name      String
+  slug      String      @unique
+  plan      Plan        @default(FREE)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  deletedAt DateTime?
+
+  // Relations
+  memberships Membership[]
+  workspaces  Workspace[]
+  usage       Usage?
+  brandVoice  BrandVoice?
+  apiKeys     ApiKey[]
+  settings    OrganizationSetting?
+  auditLogs   AuditLog[]        @relation("AuditOrgLogs")
+  notifications Notification[]
+  usageEvents UsageEvent[]
+
+  roles       Role[]
+
+  comments Comment[]
+
+  @@map("organizations")
+}
+
+model OrganizationSetting {
+  orgId   String @id
+  // flexible org-level config
+  config  Json
+  updatedAt DateTime @updatedAt
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@map("organization_settings")
+}
+
+// -------------------- Memberships --------------------
+
+model Membership {
   id     String @id @default(cuid())
-  name   String
+  userId String
   orgId  String
-  
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  // Many-to-many assignment to roles at ORGANIZATION scope
+  membershipRoles MembershipRole[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, orgId])
+  @@index([orgId, userId])
+  @@map("memberships")
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  orgId     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
   projects     Project[]
-  
+
+  // Access control at workspace level
+  memberships  WorkspaceMembership[]
+
+  auditLogs   AuditLog[]        @relation("AuditWorkspaceLogs")
+
+  @@index([orgId])
   @@map("workspaces")
 }
 
@@ -107,13 +162,21 @@ model Project {
   id          String   @id @default(cuid())
   name        String
   workspaceId String
-  projectType String   // blog, ads, product, social, etc.
+  projectType String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+  deletedAt   DateTime?
+
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   contents  Content[]
-  
+
+  memberships ProjectMembership[]
+  auditLogs   AuditLog[]        @relation("AuditProjectLogs")
+  projectTags ProjectTag[]
+
+  comments Comment[]
+
+  @@index([workspaceId])
   @@map("projects")
 }
 
@@ -121,24 +184,170 @@ model Content {
   id        String   @id @default(cuid())
   kind      String   // post, ad, email, caption
   input     Json
-  output    Json     // versions history
+  output    Json     // latest version snapshot (optional convenience)
   status    String   // draft, ready, scheduled, published
   projectId String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+  deletedAt DateTime?
+
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
+
+  // Versioning & comments & tags
+  versions ContentVersion[]
+  comments Comment[]
+  contentTags ContentTag[]
+
+  @@index([projectId])
   @@map("contents")
 }
+
+model ContentVersion {
+  id         String   @id @default(cuid())
+  contentId  String
+  version    Int      // maintain sequential number in application
+  output     Json
+  createdAt  DateTime @default(now())
+  createdBy  String?
+
+  content    Content  @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  author     User?    @relation("ContentVersionAuthor", fields: [createdBy], references: [id])
+
+  @@unique([contentId, version])
+  @@index([createdBy])
+  @@map("content_versions")
+}
+
+// -------------------- RBAC: Roles & Permissions --------------------
+
+model Role {
+  id        String   @id @default(cuid())
+  // Name must be unique within org+scope; system roles have orgId = null
+  name      String
+  scope     Scope
+  orgId     String?  // null => global/system role template
+  isSystem  Boolean  @default(false)
+
+  organization Organization? @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  rolePermissions RolePermission[]
+
+  // Assignments per scope (three junctions below)
+  membershipRoles MembershipRole[]
+  workspaceMembershipRoles WorkspaceMembershipRole[]
+  projectMembershipRoles   ProjectMembershipRole[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([orgId, scope, name], map: "idx_role_org_scope_name")
+  @@map("roles")
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  key         String  @unique // e.g., "org.invite", "workspace.project.create", "project.content.edit"
+  description String?
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role        Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission  Permission  @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+// Assign roles to organization membership (scope: ORGANIZATION)
+model MembershipRole {
+  membershipId String
+  roleId       String
+
+  membership Membership @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([membershipId, roleId])
+  @@map("membership_roles")
+}
+
+// -------------------- Workspace Access --------------------
+
+model WorkspaceMembership {
+  id          String   @id @default(cuid())
+  userId      String
+  workspaceId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  // Many-to-many to roles (scope: WORKSPACE)
+  roles WorkspaceMembershipRole[]
+
+  @@unique([userId, workspaceId])
+  @@index([workspaceId, userId])
+  @@map("workspace_memberships")
+}
+
+model WorkspaceMembershipRole {
+  workspaceMembershipId String
+  roleId                String
+
+  membership WorkspaceMembership @relation(fields: [workspaceMembershipId], references: [id], onDelete: Cascade)
+  role       Role                @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceMembershipId, roleId])
+  @@map("workspace_membership_roles")
+}
+
+// -------------------- Project Access --------------------
+
+model ProjectMembership {
+  id        String   @id @default(cuid())
+  userId    String
+  projectId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Many-to-many to roles (scope: PROJECT)
+  roles ProjectMembershipRole[]
+
+  @@unique([userId, projectId])
+  @@index([projectId, userId])
+  @@map("project_memberships")
+}
+
+model ProjectMembershipRole {
+  projectMembershipId String
+  roleId              String
+
+  membership ProjectMembership @relation(fields: [projectMembershipId], references: [id], onDelete: Cascade)
+  role       Role               @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([projectMembershipId, roleId])
+  @@map("project_membership_roles")
+}
+
+// -------------------- Brand Voice & Usage --------------------
 
 model BrandVoice {
   id    String @id @default(cuid())
   orgId String @unique
   docs  Json   // embeddings source refs
-  
+
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  
+
   @@map("brand_voices")
 }
 
@@ -151,21 +360,143 @@ model Usage {
   itemsGenerated Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  
+
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  
+
   @@map("usage")
 }
 
-model ApiKey {
-  id        String    @id @default(cuid())
+model UsageEvent {
+  id        String   @id @default(cuid())
   orgId     String
-  tokenHash String    @unique
-  label     String?
-  createdAt DateTime  @default(now())
-  lastUsed  DateTime?
-  
+  userId    String?
+  scope     Scope
+  eventType String   // e.g., "generation", "api.call", "project.create"
+  tokensIn  Int      @default(0)
+  tokensOut Int      @default(0)
+  meta      Json?
+  createdAt DateTime @default(now())
+
   organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
-  
+  user         User?        @relation(fields: [userId], references: [id])
+
+  @@index([orgId, createdAt])
+  @@index([userId, createdAt])
+  @@map("usage_events")
+}
+
+// -------------------- API Keys --------------------
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  orgId      String
+  tokenHash  String    @unique
+  label      String?
+  scopes     String[]  // e.g., ["read", "write", "projects:read"]
+  createdAt  DateTime  @default(now())
+  lastUsed   DateTime?
+  expiresAt  DateTime?
+
+  organization Organization @relation(fields: [orgId], references: [id], onDelete: Cascade)
+
+  @@index([orgId])
   @@map("api_keys")
+}
+
+// -------------------- Audit, Notifications, Comments --------------------
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  actorUserId String?
+  orgId       String?
+  workspaceId String?
+  projectId   String?
+  entityType  String   // e.g., "Organization", "Workspace", "Project", "Content"
+  entityId    String
+  action      String   // e.g., "CREATE", "UPDATE", "DELETE", "RESTORE"
+  oldValue    Json?
+  newValue    Json?
+  createdAt   DateTime @default(now())
+
+  actor      User?         @relation("AuditActorLogs", fields: [actorUserId], references: [id])
+  organization Organization? @relation("AuditOrgLogs", fields: [orgId], references: [id])
+  workspace  Workspace?     @relation("AuditWorkspaceLogs", fields: [workspaceId], references: [id])
+  project    Project?       @relation("AuditProjectLogs", fields: [projectId], references: [id])
+
+  @@index([orgId, createdAt])
+  @@index([workspaceId, createdAt])
+  @@index([projectId, createdAt])
+  @@map("audit_logs")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  orgId     String?
+  type      String   // e.g., "mention", "invite", "status"
+  message   String?
+  payload   Json?
+  readAt    DateTime?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [orgId], references: [id])
+
+  @@index([userId, createdAt])
+  @@map("notifications")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  userId    String
+  orgId     String?
+  projectId String?
+  contentId String?
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization? @relation(fields: [orgId], references: [id])
+  project   Project?    @relation(fields: [projectId], references: [id])
+  content   Content?    @relation(fields: [contentId], references: [id])
+
+  @@index([projectId])
+  @@index([contentId])
+  @@map("comments")
+}
+
+// -------------------- Tagging --------------------
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+
+  projectTags ProjectTag[]
+  contentTags ContentTag[]
+
+  @@map("tags")
+}
+
+model ProjectTag {
+  projectId String
+  tagId     String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, tagId])
+  @@map("project_tags")
+}
+
+model ContentTag {
+  contentId String
+  tagId     String
+
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contentId, tagId])
+  @@map("content_tags")
 }
