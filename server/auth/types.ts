@@ -1,5 +1,3 @@
-// server/auth/types.ts - ABAC types for ThinkTapFast
-
 import type { User, Organization, Workspace, Project, Role as DBRole, Permission as DBPermission } from '@prisma/client';
 
 // Core entities from your database
@@ -73,17 +71,37 @@ export interface PermissionResult {
   reason?: string;
 }
 
-// Permission function type
+// Permission function types with proper resource typing
 export type PermissionCheck<T = unknown> = 
   | boolean 
   | ((context: PermissionContext, resource?: T) => boolean | Promise<boolean>);
 
-// Role-based permissions configuration with proper typing
-export interface RolePermissions {
-  [resource: string]: {
-    [action: string]: PermissionCheck<unknown>;
-  };
+// Resource-aware permission configurations
+export interface ResourcePermissions<T = unknown> {
+  create?: PermissionCheck<T>;
+  read?: PermissionCheck<T>;
+  update?: PermissionCheck<T>;
+  delete?: PermissionCheck<T>;
+  invite?: PermissionCheck<T>;
+  manage?: PermissionCheck<T>;
+  export?: PermissionCheck<T>;
+  publish?: PermissionCheck<T>;
+  schedule?: PermissionCheck<T>;
 }
+
+// Plan-based permissions with proper resource typing
+export interface PlanPermissions {
+  content: ResourcePermissions<ContentResource>;
+  project: ResourcePermissions<ProjectResource>;
+  workspace: ResourcePermissions<WorkspaceResource>;
+  organization: ResourcePermissions<OrganizationResource>;
+  apikey: ResourcePermissions<ApiKeyResource>;
+  user?: ResourcePermissions<UserResource>;
+  billing?: ResourcePermissions<OrganizationResource>;
+}
+
+// Type-safe role permissions configuration
+export type RolePermissions = PlanPermissions;
 
 // Resource-specific types for better type safety
 export interface ContentResource {

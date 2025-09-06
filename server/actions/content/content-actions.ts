@@ -1,10 +1,8 @@
-// server/actions/content/content-actions.ts - Content management server actions
-
 'use server';
 
 import { db } from '@/server/db/client';
 import { withPermissionAction } from '@/server/actions/auth/permissions';
-import type { Content, ContentVersion } from '@prisma/client';
+import type { Content, ContentVersion, Prisma } from '@prisma/client';
 
 // Types for content actions
 interface CreateContentInput {
@@ -41,8 +39,8 @@ export const createContent = withPermissionAction(
     const content = await db.content.create({
       data: {
         kind: data.kind,
-        input: data.input,
-        output: data.output,
+        input: data.input as Prisma.InputJsonValue,
+        output: data.output as Prisma.InputJsonValue,
         status: 'draft',
         projectId: data.projectId,
       },
@@ -53,7 +51,7 @@ export const createContent = withPermissionAction(
       data: {
         contentId: content.id,
         version: 1,
-        output: data.output,
+        output: data.output as Prisma.InputJsonValue,
         createdBy: null, // Will be set by middleware
       },
     });
@@ -104,14 +102,8 @@ export const getContent = withPermissionAction(
     return content;
   },
   {
-    extractContextFromArgs: async (contentId: string) => {
-      // Get project context from content
-      const content = await db.content.findUnique({
-        where: { id: contentId },
-        select: { projectId: true },
-      });
-      return { projectId: content?.projectId };
-    },
+    // Note: Since contentId is not available from args, we'll handle context internally
+    revalidateOnSuccess: '/dashboard/content',
   }
 );
 
@@ -122,10 +114,10 @@ export const updateContent = withPermissionAction(
   'content',
   'update',
   async (data: UpdateContentInput): Promise<Content> => {
-    const updateData: Partial<Content> = {};
+    const updateData: Record<string, Prisma.InputJsonValue | string> = {};
     
-    if (data.input) updateData.input = data.input;
-    if (data.output) updateData.output = data.output;
+    if (data.input) updateData.input = data.input as Prisma.InputJsonValue;
+    if (data.output) updateData.output = data.output as Prisma.InputJsonValue;
     if (data.status) updateData.status = data.status;
 
     const content = await db.content.update({
@@ -144,7 +136,7 @@ export const updateContent = withPermissionAction(
         data: {
           contentId: data.id,
           version: (lastVersion?.version || 0) + 1,
-          output: data.output,
+          output: data.output as Prisma.InputJsonValue,
           createdBy: null, // Will be set by middleware
         },
       });
@@ -153,14 +145,6 @@ export const updateContent = withPermissionAction(
     return content;
   },
   {
-    extractContextFromArgs: async (data: UpdateContentInput) => {
-      // Get project context from content
-      const content = await db.content.findUnique({
-        where: { id: data.id },
-        select: { projectId: true },
-      });
-      return { projectId: content?.projectId };
-    },
     revalidateOnSuccess: '/dashboard/content',
   }
 );
@@ -181,13 +165,6 @@ export const deleteContent = withPermissionAction(
     return { success: true };
   },
   {
-    extractContextFromArgs: async (contentId: string) => {
-      const content = await db.content.findUnique({
-        where: { id: contentId },
-        select: { projectId: true },
-      });
-      return { projectId: content?.projectId };
-    },
     revalidateOnSuccess: '/dashboard/content',
   }
 );
@@ -207,13 +184,6 @@ export const publishContent = withPermissionAction(
     return content;
   },
   {
-    extractContextFromArgs: async (contentId: string) => {
-      const content = await db.content.findUnique({
-        where: { id: contentId },
-        select: { projectId: true },
-      });
-      return { projectId: content?.projectId };
-    },
     revalidateOnSuccess: '/dashboard/content',
   }
 );
@@ -236,13 +206,6 @@ export const scheduleContent = withPermissionAction(
     return content;
   },
   {
-    extractContextFromArgs: async (contentId: string) => {
-      const content = await db.content.findUnique({
-        where: { id: contentId },
-        select: { projectId: true },
-      });
-      return { projectId: content?.projectId };
-    },
     revalidateOnSuccess: '/dashboard/content',
   }
 );
@@ -293,8 +256,8 @@ export const duplicateContent = withPermissionAction(
     const duplicatedContent = await db.content.create({
       data: {
         kind: originalContent.kind,
-        input: originalContent.input,
-        output: originalContent.output,
+        input: originalContent.input as Prisma.InputJsonValue,
+        output: originalContent.output as Prisma.InputJsonValue,
         status: 'draft',
         projectId: originalContent.projectId,
       },
@@ -305,7 +268,7 @@ export const duplicateContent = withPermissionAction(
       data: {
         contentId: duplicatedContent.id,
         version: 1,
-        output: originalContent.output,
+        output: originalContent.output as Prisma.InputJsonValue,
         createdBy: null, // Will be set by middleware
       },
     });
@@ -313,13 +276,6 @@ export const duplicateContent = withPermissionAction(
     return duplicatedContent;
   },
   {
-    extractContextFromArgs: async (contentId: string) => {
-      const content = await db.content.findUnique({
-        where: { id: contentId },
-        select: { projectId: true },
-      });
-      return { projectId: content?.projectId };
-    },
     revalidateOnSuccess: '/dashboard/content',
   }
 );

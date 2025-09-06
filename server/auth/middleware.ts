@@ -1,5 +1,3 @@
-// server/auth/middleware.ts - ABAC middleware for route protection
-
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getCurrentUserWithRoles, createPermissionContext } from './clerk-helpers';

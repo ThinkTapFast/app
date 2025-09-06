@@ -1,9 +1,7 @@
-// app/api/webhooks/clerk/route.ts - Clerk webhook handler for user sync
-
-import { NextResponse } from 'next/response';
+import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { Webhook } from 'svix';
-import type { WebhookEvent } from '@clerk/nextjs/server';
+import type { WebhookEvent, DeletedObjectJSON } from '@clerk/nextjs/server';
 import { db } from '@/server/db/client';
 
 const SIGNING_SECRET = process.env.CLERK_WEBHOOK_SECRET;
@@ -37,7 +35,7 @@ interface ClerkSessionData {
 }
 
 export async function POST(req: Request) {
-  const wh = new Webhook(SIGNING_SECRET);
+  const wh = new Webhook(SIGNING_SECRET as string);
 
   // Get headers
   const headerPayload = await headers();
@@ -78,7 +76,7 @@ export async function POST(req: Request) {
         break;
       
       case 'user.deleted':
-        await handleUserDeleted(evt.data as ClerkUserData);
+        await handleUserDeleted(evt.data);
         break;
       
       case 'session.created':
@@ -164,12 +162,17 @@ async function handleUserUpdated(userData: ClerkUserData) {
   }
 }
 
-async function handleUserDeleted(userData: ClerkUserData) {
-  console.log('User deleted:', userData.id);
+async function handleUserDeleted(deletedData: DeletedObjectJSON) {
+  console.log('User deleted:', deletedData.id);
   
   try {
+    if (!deletedData.id) {
+      console.error('No user ID found in deleted data');
+      return;
+    }
+
     await db.user.update({
-      where: { clerkId: userData.id },
+      where: { clerkId: deletedData.id },
       data: { 
         deletedAt: new Date(),
         isActive: false 

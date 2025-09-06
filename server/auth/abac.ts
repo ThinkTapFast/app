@@ -1,5 +1,3 @@
-// server/auth/abac.ts - Main ABAC permission system
-
 import type { 
   PermissionContext, 
   ResourceType, 

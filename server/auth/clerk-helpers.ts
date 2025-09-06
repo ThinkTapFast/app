@@ -1,5 +1,3 @@
-// server/auth/clerk-helpers.ts - Clerk authentication helpers
-
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import type { UserWithRoles, PermissionContext } from './types';

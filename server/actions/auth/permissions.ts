@@ -1,5 +1,3 @@
-// server/actions/auth/permissions.ts - Server actions for permission checking
-
 'use server';
 
 import { redirect } from 'next/navigation';

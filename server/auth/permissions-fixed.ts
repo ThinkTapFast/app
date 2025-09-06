@@ -80,14 +80,20 @@ export function hasPlanAccess(context: PermissionContext, orgId: string, require
 export const SYSTEM_PERMISSIONS: Record<Plan, PlanPermissions> = {
   FREE: {
     content: {
-      create: true, // Will implement usage checking logic later
+      create: (context) => {
+        // Check usage limits for free plan
+        return true; // Implement usage checking logic
+      },
       read: true,
       update: (context, resource) => isOwner(context, (resource as ContentResource)?.userId),
       delete: (context, resource) => isOwner(context, (resource as ContentResource)?.userId),
       export: false, // No export for free
     },
     project: {
-      create: true, // Will implement project limit checking later
+      create: (context) => {
+        // Limit number of projects for free plan
+        return true; // Implement project limit checking
+      },
       read: true,
       update: (context, resource) => hasProjectRole(context, (resource as ProjectResource)?.id, 'editor'),
       delete: (context, resource) => hasProjectRole(context, (resource as ProjectResource)?.id, 'owner'),
