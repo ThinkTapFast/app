@@ -80,7 +80,7 @@ export function hasPlanAccess(context: PermissionContext, orgId: string, require
 export const SYSTEM_PERMISSIONS: Record<Plan, PlanPermissions> = {
   FREE: {
     content: {
-      create: (context) => {
+      create: () => {
         // Check usage limits for free plan
         return true; // Implement usage checking logic
       },
@@ -90,7 +90,7 @@ export const SYSTEM_PERMISSIONS: Record<Plan, PlanPermissions> = {
       export: false, // No export for free
     },
     project: {
-      create: (context) => {
+      create: () => {
         // Limit number of projects for free plan
         return true; // Implement project limit checking
       },

@@ -3,19 +3,20 @@
 import { db } from '@/server/db/client';
 import { withPermissionAction } from '@/server/actions/auth/permissions';
 import type { Content, ContentVersion, Prisma } from '@prisma/client';
+import type { ContentInput, ContentOutput } from '@/server/auth/types/index';
 
 // Types for content actions
 interface CreateContentInput {
   kind: string;
-  input: Record<string, unknown>;
-  output: Record<string, unknown>;
+  input: ContentInput;
+  output: ContentOutput;
   projectId: string;
 }
 
 interface UpdateContentInput {
   id: string;
-  input?: Record<string, unknown>;
-  output?: Record<string, unknown>;
+  input?: ContentInput;
+  output?: ContentOutput;
   status?: string;
 }
 
