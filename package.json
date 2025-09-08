@@ -25,6 +25,7 @@
     "db:migrate:deploy": "dotenv -e .env.production.local -- prisma migrate deploy",
     "db:studio:prod": "dotenv -e .env.production.local -- prisma studio",
     "db:seed:prod": "dotenv -e .env.production.local -- tsx server/db/seeds.ts",
+    "db:seed:permissions:prod": "dotenv -e .env.production.local -- tsx server/db/seed-permissions-only.ts",
     "db:reset:prod": "dotenv -e .env.production.local -- prisma migrate reset && bun run db:seed:prod",
     "db:setup:prod": "bun run db:generate:prod && bun run db:push:prod && bun run db:seed:prod",
     "db:clean:prod": "dotenv -e .env.production.local -- prisma db push --force-reset && bun run db:seed:prod",
