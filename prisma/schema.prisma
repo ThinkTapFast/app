@@ -88,6 +88,14 @@ model Organization {
   updatedAt DateTime    @updatedAt
   deletedAt DateTime?
 
+  // Paddle subscription fields
+  paddleSubscriptionId         String?
+  paddleCustomerId            String?
+  subscriptionStatus          String?  // ACTIVE, CANCELED, PAUSED, etc.
+  subscriptionCurrentPeriodStart DateTime?
+  subscriptionCurrentPeriodEnd   DateTime?
+  subscriptionCancelAtPeriodEnd  Boolean  @default(false)
+
   // Relations
   memberships Membership[]
   workspaces  Workspace[]

@@ -32,7 +32,9 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = db;
 }
 
-// Graceful shutdown
-process.on("beforeExit", async () => {
-  await db.$disconnect();
-});
+// Graceful shutdown - only in Node.js environments
+if (typeof process !== 'undefined' && process.on) {
+  process.on("beforeExit", async () => {
+    await db.$disconnect();
+  });
+}
