@@ -15,6 +15,7 @@
     "db:migrate": "dotenv -e .env.development.local -- prisma migrate dev",
     "db:studio": "dotenv -e .env.development.local -- prisma studio",
     "db:seed": "dotenv -e .env.development.local -- tsx server/db/seeds.ts",
+    "db:seed:permissions": "dotenv -e .env.development.local -- tsx server/db/seed-permissions-only.ts",
     "db:reset": "dotenv -e .env.development.local -- prisma migrate reset && bun run db:seed",
     "db:setup": "bun run db:generate && bun run db:push && bun run db:seed",
     "db:clean": "dotenv -e .env.development.local -- prisma db push --force-reset && bun run db:seed",

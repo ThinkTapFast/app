@@ -1,4 +1,4 @@
-// server/actions/billing/organization-actions.ts - Organization & billing server actions
+// Organization & billing server actions
 
 'use server';
 

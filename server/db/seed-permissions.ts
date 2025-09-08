@@ -1,4 +1,4 @@
-// server/db/seed-permissions.ts - Seed default permissions and roles
+// Seed default permissions and roles
 
 import { db } from './client';
 import type { Scope } from '@prisma/client';

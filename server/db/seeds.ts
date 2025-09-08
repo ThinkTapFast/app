@@ -1,5 +1,6 @@
 import { db } from "./client";
 import { Plan, PlatformRole } from "@prisma/client";
+import { seedPermissions } from "./seed-permissions";
 
 async function seedDatabase() {
   console.log("🌱 Starting database seeding...");
@@ -85,47 +86,13 @@ async function seedDatabase() {
 
     console.log("👤 Created users");
 
-    // Create core permissions
-    const permissions = await db.permission.createMany({
-      data: [
-        // Organization permissions
-        { key: "org.read", description: "View organization details" },
-        { key: "org.update", description: "Update organization settings" },
-        { key: "org.delete", description: "Delete organization" },
-        { key: "org.invite", description: "Invite users to organization" },
-        { key: "org.manage_members", description: "Manage organization members" },
-        { key: "org.manage_billing", description: "Manage billing and subscriptions" },
-
-        // Workspace permissions
-        { key: "workspace.create", description: "Create new workspaces" },
-        { key: "workspace.read", description: "View workspace details" },
-        { key: "workspace.update", description: "Update workspace settings" },
-        { key: "workspace.delete", description: "Delete workspace" },
-        { key: "workspace.manage_members", description: "Manage workspace members" },
-
-        // Project permissions
-        { key: "project.create", description: "Create new projects" },
-        { key: "project.read", description: "View project details" },
-        { key: "project.update", description: "Update project settings" },
-        { key: "project.delete", description: "Delete project" },
-        { key: "project.manage_members", description: "Manage project members" },
-
-        // Content permissions
-        { key: "content.create", description: "Create new content" },
-        { key: "content.read", description: "View content" },
-        { key: "content.update", description: "Edit content" },
-        { key: "content.delete", description: "Delete content" },
-        { key: "content.publish", description: "Publish content" },
-
-        // API permissions
-        { key: "api.read", description: "Read access via API" },
-        { key: "api.write", description: "Write access via API" },
-        { key: "api.manage_keys", description: "Manage API keys" },
-      ],
-    });
+    // Seed comprehensive permissions and roles using our ABAC system
+    console.log("🔐 Seeding ABAC permissions and roles...");
+    await seedPermissions();
+    console.log("✅ ABAC permissions and roles seeded");
 
     const allPermissions = await db.permission.findMany();
-    console.log("🔐 Created permissions");
+    console.log(`� Total permissions: ${allPermissions.length}`);
 
     // Create organizations
     const freeOrg = await db.organization.create({
