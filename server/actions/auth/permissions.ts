@@ -126,52 +126,39 @@ export async function getUserPermissions(context?: {
     
     if (!ctx) return null;
     
-    // Check common permissions
-    const permissions = {
-      organization: {
-        create: await checkPermission(ctx, 'organization', 'create').then(r => r.allowed),
-        read: await checkPermission(ctx, 'organization', 'read').then(r => r.allowed),
-        update: await checkPermission(ctx, 'organization', 'update').then(r => r.allowed),
-        delete: await checkPermission(ctx, 'organization', 'delete').then(r => r.allowed),
-        invite: await checkPermission(ctx, 'organization', 'invite').then(r => r.allowed),
-        manage: await checkPermission(ctx, 'organization', 'manage').then(r => r.allowed),
-      },
-      workspace: {
-        create: await checkPermission(ctx, 'workspace', 'create').then(r => r.allowed),
-        read: await checkPermission(ctx, 'workspace', 'read').then(r => r.allowed),
-        update: await checkPermission(ctx, 'workspace', 'update').then(r => r.allowed),
-        delete: await checkPermission(ctx, 'workspace', 'delete').then(r => r.allowed),
-        manage: await checkPermission(ctx, 'workspace', 'manage').then(r => r.allowed),
-      },
-      project: {
-        create: await checkPermission(ctx, 'project', 'create').then(r => r.allowed),
-        read: await checkPermission(ctx, 'project', 'read').then(r => r.allowed),
-        update: await checkPermission(ctx, 'project', 'update').then(r => r.allowed),
-        delete: await checkPermission(ctx, 'project', 'delete').then(r => r.allowed),
-        manage: await checkPermission(ctx, 'project', 'manage').then(r => r.allowed),
-      },
-      content: {
-        create: await checkPermission(ctx, 'content', 'create').then(r => r.allowed),
-        read: await checkPermission(ctx, 'content', 'read').then(r => r.allowed),
-        update: await checkPermission(ctx, 'content', 'update').then(r => r.allowed),
-        delete: await checkPermission(ctx, 'content', 'delete').then(r => r.allowed),
-        export: await checkPermission(ctx, 'content', 'export').then(r => r.allowed),
-        publish: await checkPermission(ctx, 'content', 'publish').then(r => r.allowed),
-        schedule: await checkPermission(ctx, 'content', 'schedule').then(r => r.allowed),
-      },
-      apikey: {
-        create: await checkPermission(ctx, 'apikey', 'create').then(r => r.allowed),
-        read: await checkPermission(ctx, 'apikey', 'read').then(r => r.allowed),
-        update: await checkPermission(ctx, 'apikey', 'update').then(r => r.allowed),
-        delete: await checkPermission(ctx, 'apikey', 'delete').then(r => r.allowed),
-      },
-      billing: {
-        read: await checkPermission(ctx, 'billing', 'read').then(r => r.allowed),
-        update: await checkPermission(ctx, 'billing', 'update').then(r => r.allowed),
-      },
+    // Helper function to check multiple permissions for a resource
+    const checkResourcePermissions = async (
+      resource: ResourceType, 
+      actions: Action[]
+    ): Promise<Record<string, boolean>> => {
+      const results = await Promise.all(
+        actions.map(async (action) => {
+          const result = await checkPermission(ctx, resource, action);
+          return [action, result.allowed] as const;
+        })
+      );
+      return Object.fromEntries(results);
     };
     
-    return permissions;
+    // Check permissions for all resources
+    const [organizationPerms, workspacePerms, projectPerms, contentPerms, apikeyPerms, billingPerms] = await Promise.all([
+      checkResourcePermissions('organization', ['create', 'read', 'update', 'delete', 'invite', 'manage']),
+      checkResourcePermissions('workspace', ['create', 'read', 'update', 'delete', 'manage']),
+      checkResourcePermissions('project', ['create', 'read', 'update', 'delete', 'manage']),
+      checkResourcePermissions('content', ['create', 'read', 'update', 'delete', 'export', 'publish', 'schedule']),
+      checkResourcePermissions('apikey', ['create', 'read', 'update', 'delete']),
+      checkResourcePermissions('billing', ['read', 'update']),
+    ]);
+    
+    return {
+      organization: organizationPerms,
+      workspace: workspacePerms,
+      project: projectPerms,
+      content: contentPerms,
+      apikey: apikeyPerms,
+      billing: billingPerms,
+    };
+    
   } catch (error) {
     console.error('Error getting user permissions:', error);
     return null;

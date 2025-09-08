@@ -39,7 +39,7 @@ export function hasWorkspaceRole(
   workspaceId: string, 
   requiredRole: WorkspaceRole
 ): boolean {
-  const membership = context.user.workspaceMemberships.find(m => m.workspace.id === workspaceId);
+  const membership = context.user.workspaceMemberships?.find(m => m.workspace.id === workspaceId);
   if (!membership) return false;
 
   const roleHierarchy: WorkspaceRole[] = ['viewer', 'editor', 'admin'];
@@ -54,7 +54,7 @@ export function hasProjectRole(
   projectId: string, 
   requiredRole: ProjectRole
 ): boolean {
-  const membership = context.user.projectMemberships.find(m => m.project.id === projectId);
+  const membership = context.user.projectMemberships?.find(m => m.project.id === projectId);
   if (!membership) return false;
 
   const roleHierarchy: ProjectRole[] = ['viewer', 'collaborator', 'editor', 'owner'];
@@ -77,6 +77,64 @@ export function hasPlanAccess(context: PermissionContext, orgId: string, require
 }
 
 // System-wide permissions based on plans with proper typing
+// Shared enterprise permissions for BUSINESS and AGENCY plans
+const ENTERPRISE_PERMISSIONS: PlanPermissions = {
+  content: {
+    create: true,
+    read: true,
+    update: (context, resource) => {
+      const contentRes = resource as ContentResource;
+      return isOwner(context, contentRes?.userId) || 
+             hasProjectRole(context, contentRes?.projectId, 'editor');
+    },
+    delete: (context, resource) => {
+      const contentRes = resource as ContentResource;
+      return isOwner(context, contentRes?.userId) || 
+             hasProjectRole(context, contentRes?.projectId, 'owner');
+    },
+    export: true,
+    publish: true,
+    schedule: true,
+    manage: true,
+  },
+  project: {
+    create: true,
+    read: true,
+    update: (context, resource) => hasProjectRole(context, (resource as ProjectResource)?.id, 'editor'),
+    delete: (context, resource) => hasProjectRole(context, (resource as ProjectResource)?.id, 'owner'),
+    manage: true,
+  },
+  workspace: {
+    create: true,
+    read: true,
+    update: (context, resource) => hasWorkspaceRole(context, (resource as WorkspaceResource)?.id, 'admin'),
+    delete: (context, resource) => hasWorkspaceRole(context, (resource as WorkspaceResource)?.id, 'admin'),
+    manage: true,
+  },
+  organization: {
+    create: true,
+    read: true,
+    update: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'admin'),
+    delete: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'owner'),
+    invite: true,
+    manage: true,
+  },
+  apikey: {
+    create: true,
+    read: true,
+    update: (context, resource) => hasOrganizationRole(context, (resource as ApiKeyResource)?.orgId, 'admin'),
+    delete: (context, resource) => hasOrganizationRole(context, (resource as ApiKeyResource)?.orgId, 'admin'),
+  },
+  user: {
+    invite: true,
+    manage: (context, resource) => hasOrganizationRole(context, (resource as UserResource)?.orgId || '', 'admin'),
+  },
+  billing: {
+    read: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'admin'),
+    update: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'owner'),
+  },
+};
+
 export const SYSTEM_PERMISSIONS: Record<Plan, PlanPermissions> = {
   FREE: {
     content: {
@@ -156,106 +214,9 @@ export const SYSTEM_PERMISSIONS: Record<Plan, PlanPermissions> = {
     },
   },
 
-  BUSINESS: {
-    content: {
-      create: true,
-      read: true,
-      update: (context, resource) => {
-        const contentRes = resource as ContentResource;
-        return isOwner(context, contentRes?.userId) || 
-               hasProjectRole(context, contentRes?.projectId, 'editor');
-      },
-      delete: (context, resource) => {
-        const contentRes = resource as ContentResource;
-        return isOwner(context, contentRes?.userId) || 
-               hasProjectRole(context, contentRes?.projectId, 'owner');
-      },
-      export: true,
-      publish: true,
-      schedule: true,
-    },
-    project: {
-      create: true,
-      read: true,
-      update: (context, resource) => hasProjectRole(context, (resource as ProjectResource)?.id, 'editor'),
-      delete: (context, resource) => hasProjectRole(context, (resource as ProjectResource)?.id, 'owner'),
-      manage: (context, resource) => hasProjectRole(context, (resource as ProjectResource)?.id, 'owner'),
-    },
-    workspace: {
-      create: true,
-      read: true,
-      update: (context, resource) => hasWorkspaceRole(context, (resource as WorkspaceResource)?.id, 'admin'),
-      delete: (context, resource) => hasWorkspaceRole(context, (resource as WorkspaceResource)?.id, 'admin'),
-      manage: (context, resource) => hasWorkspaceRole(context, (resource as WorkspaceResource)?.id, 'admin'),
-    },
-    organization: {
-      create: true,
-      read: true,
-      update: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'admin'),
-      delete: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'owner'),
-      invite: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'member'),
-      manage: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'admin'),
-    },
-    apikey: {
-      create: true,
-      read: true,
-      update: (context, resource) => hasOrganizationRole(context, (resource as ApiKeyResource)?.orgId, 'admin'),
-      delete: (context, resource) => hasOrganizationRole(context, (resource as ApiKeyResource)?.orgId, 'admin'),
-    },
-    user: {
-      invite: (context, resource) => hasOrganizationRole(context, (resource as UserResource)?.orgId || '', 'member'),
-      manage: (context, resource) => hasOrganizationRole(context, (resource as UserResource)?.orgId || '', 'admin'),
-    },
-  },
-
-  AGENCY: {
-    content: {
-      create: true,
-      read: true,
-      update: true,
-      delete: true,
-      export: true,
-      publish: true,
-      schedule: true,
-      manage: true,
-    },
-    project: {
-      create: true,
-      read: true,
-      update: true,
-      delete: (context, resource) => hasProjectRole(context, (resource as ProjectResource)?.id, 'owner'),
-      manage: true,
-    },
-    workspace: {
-      create: true,
-      read: true,
-      update: true,
-      delete: (context, resource) => hasWorkspaceRole(context, (resource as WorkspaceResource)?.id, 'admin'),
-      manage: true,
-    },
-    organization: {
-      create: true,
-      read: true,
-      update: true,
-      delete: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'owner'),
-      invite: true,
-      manage: true,
-    },
-    apikey: {
-      create: true,
-      read: true,
-      update: true,
-      delete: true,
-    },
-    user: {
-      invite: true,
-      manage: true,
-    },
-    billing: {
-      read: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'admin'),
-      update: (context, resource) => hasOrganizationRole(context, (resource as OrganizationResource)?.id, 'owner'),
-    },
-  },
+  // Both BUSINESS and AGENCY use the same enterprise-level permissions
+  BUSINESS: ENTERPRISE_PERMISSIONS,
+  AGENCY: ENTERPRISE_PERMISSIONS,
 
   CUSTOM: {
     // Custom plans get full access - will be configured per customer
@@ -266,37 +227,5 @@ export const SYSTEM_PERMISSIONS: Record<Plan, PlanPermissions> = {
     apikey: { create: true, read: true, update: true, delete: true },
     user: { invite: true, manage: true },
     billing: { read: true, update: true },
-  },
-};
-
-// Extend AGENCY with BUSINESS permissions as base
-const businessPerms = SYSTEM_PERMISSIONS.BUSINESS;
-SYSTEM_PERMISSIONS.AGENCY = {
-  ...businessPerms,
-  ...SYSTEM_PERMISSIONS.AGENCY,
-  // Override specific permissions
-  content: {
-    ...businessPerms.content,
-    ...SYSTEM_PERMISSIONS.AGENCY.content,
-  },
-  project: {
-    ...businessPerms.project,
-    ...SYSTEM_PERMISSIONS.AGENCY.project,
-  },
-  workspace: {
-    ...businessPerms.workspace,
-    ...SYSTEM_PERMISSIONS.AGENCY.workspace,
-  },
-  organization: {
-    ...businessPerms.organization,
-    ...SYSTEM_PERMISSIONS.AGENCY.organization,
-  },
-  apikey: {
-    ...businessPerms.apikey,
-    ...SYSTEM_PERMISSIONS.AGENCY.apikey,
-  },
-  user: {
-    ...businessPerms.user,
-    ...SYSTEM_PERMISSIONS.AGENCY.user,
   },
 };
