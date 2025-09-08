@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { AuthButton } from "@/components/auth/sign-in-button";
 
 export default function Home() {
   return (
@@ -24,17 +23,8 @@ export default function Home() {
                 >
                   Billing
                 </Link>
-                <Link 
-                  href="/test-paddle" 
-                  className="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Test Paddle
-                </Link>
               </div>
             </div>
-            
-            {/* Auth Button */}
-            <AuthButton />
           </div>
         </div>
       </nav>
@@ -53,27 +43,21 @@ export default function Home() {
             />
             <div className="text-center sm:text-left space-y-4">
               <h2 className="text-2xl font-bold">Welcome to ThinkTapFast Dashboard</h2>
-              <p className="text-gray-600">Manage your content generation and test the Paddle billing integration.</p>
+              <p className="text-gray-600">Manage your content generation and billing from here.</p>
             </div>
 
             <div className="flex flex-col items-center gap-4 sm:flex-row">
               <Link
                 className="bg-blue-600 text-white flex h-10 items-center justify-center gap-2 rounded-lg px-6 text-sm font-medium transition-colors hover:bg-blue-700"
-                href="/test-paddle"
-              >
-                🚀 Test Paddle Checkout
-              </Link>
-              <Link
-                className="bg-green-600 text-white flex h-10 items-center justify-center gap-2 rounded-lg px-6 text-sm font-medium transition-colors hover:bg-green-700"
                 href="/billing"
               >
-                💳 View Billing Dashboard
+                View Billing Dashboard
               </Link>
               <Link
                 className="border border-gray-300 text-gray-700 flex h-10 items-center justify-center gap-2 rounded-lg px-6 text-sm font-medium transition-colors hover:bg-gray-50"
                 href="/content/generate"
               >
-                ✨ Generate Content
+                Generate Content
               </Link>
             </div>
           </main>
