@@ -1,12 +1,12 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import type { UserWithRoles, PermissionContext } from './types';
+import type { UserWithMemberships, PermissionContext } from './types';
 import { db } from '../db/client';
 
 /**
  * Get the current authenticated user from Clerk with full RBAC data
  */
-export async function getCurrentUserWithRoles(): Promise<UserWithRoles | null> {
+export async function getCurrentUserWithRoles(): Promise<UserWithMemberships | null> {
   try {
     const { userId } = await auth();
     if (!userId) return null;
@@ -81,7 +81,7 @@ export async function getCurrentUserWithRoles(): Promise<UserWithRoles | null> {
 /**
  * Require authentication - redirect to sign-in if not authenticated
  */
-export async function requireAuth(): Promise<UserWithRoles> {
+export async function requireAuth(): Promise<UserWithMemberships> {
   const user = await getCurrentUserWithRoles();
   if (!user) {
     redirect('/sign-in');
@@ -142,7 +142,7 @@ export async function getClerkUser() {
 /**
  * Get user by Clerk ID (used in webhooks)
  */
-export async function getUserByClerkId(clerkId: string): Promise<UserWithRoles | null> {
+export async function getUserByClerkId(clerkId: string): Promise<UserWithMemberships | null> {
   try {
     const user = await db.user.findUnique({
       where: { clerkId },
@@ -214,7 +214,7 @@ export async function getUserByClerkId(clerkId: string): Promise<UserWithRoles |
 /**
  * Sync user data from Clerk to database
  */
-export async function syncUserFromClerk(clerkUser: ReturnType<typeof currentUser> extends Promise<infer T> ? NonNullable<T> : never): Promise<UserWithRoles | null> {
+export async function syncUserFromClerk(clerkUser: ReturnType<typeof currentUser> extends Promise<infer T> ? NonNullable<T> : never): Promise<UserWithMemberships | null> {
   try {
     const userData = {
       clerkId: clerkUser.id,

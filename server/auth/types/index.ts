@@ -1,5 +1,3 @@
-// server/auth/types/index.ts - Unified ABAC type definitions
-
 import type { 
   User, 
   Organization, 
@@ -93,7 +91,8 @@ export type Action =
 // Permission context for ABAC checks
 export interface PermissionContext {
   user: UserWithMemberships;
-  orgId?: string;
+  organizationId?: string;
+  orgId?: string; // Alias for organizationId
   workspaceId?: string;
   projectId?: string;
 }

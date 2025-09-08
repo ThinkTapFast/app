@@ -19,7 +19,7 @@ export function hasOrganizationRole(
   orgId: string, 
   requiredRole: OrganizationalRole
 ): boolean {
-  const membership = context.user.memberships.find(m => m.organization.id === orgId);
+  const membership = context.user.memberships.find((m) => m.organization.id === orgId);
   if (!membership) return false;
 
   const roleHierarchy: OrganizationalRole[] = ['viewer', 'member', 'admin', 'owner'];
@@ -34,7 +34,7 @@ export function hasWorkspaceRole(
   workspaceId: string, 
   requiredRole: WorkspaceRole
 ): boolean {
-  const membership = context.user.workspaceMemberships.find(m => m.workspace.id === workspaceId);
+  const membership = context.user.workspaceMemberships?.find((m) => m.workspace.id === workspaceId);
   if (!membership) return false;
 
   const roleHierarchy: WorkspaceRole[] = ['viewer', 'editor', 'admin'];
@@ -49,7 +49,7 @@ export function hasProjectRole(
   projectId: string, 
   requiredRole: ProjectRole
 ): boolean {
-  const membership = context.user.projectMemberships.find(m => m.project.id === projectId);
+  const membership = context.user.projectMemberships?.find((m) => m.project.id === projectId);
   if (!membership) return false;
 
   const roleHierarchy: ProjectRole[] = ['viewer', 'collaborator', 'editor', 'owner'];
@@ -60,13 +60,16 @@ export function hasProjectRole(
 }
 
 export function getUserPlan(context: PermissionContext, orgId?: string): Plan {
-  if (!orgId) {
+  // Use provided orgId or fall back to context.organizationId or context.orgId
+  const targetOrgId = orgId || context.organizationId || context.orgId;
+  
+  if (!targetOrgId) {
     // Use the first organization's plan if no specific org
     const firstMembership = context.user.memberships[0];
     return firstMembership?.organization.plan || 'FREE';
   }
   
-  const membership = context.user.memberships.find(m => m.organization.id === orgId);
+  const membership = context.user.memberships.find((m) => m.organization.id === targetOrgId);
   return membership?.organization.plan || 'FREE';
 }
 
@@ -78,7 +81,7 @@ export async function checkPermission(
   resourceData?: Record<string, unknown>
 ): Promise<PermissionResult> {
   try {
-    const plan = getUserPlan(context, context.organizationId);
+    const plan = getUserPlan(context, context.organizationId || context.orgId);
     
     // Plan-based permission checking
     const allowed = await checkPlanPermission(plan, context, resource, action, resourceData);
