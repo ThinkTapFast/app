@@ -1,6 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
-import { abacMiddleware } from "@/server/auth/middleware";
 
 // Define protected routes that require authentication
 const isProtectedRoute = createRouteMatcher([
@@ -48,13 +47,8 @@ export default clerkMiddleware(async (auth, req: NextRequest) => {
       }
     }
     
-    // Apply ABAC permissions for API routes
-    if (pathname.startsWith('/api/v1')) {
-      const abacResult = await abacMiddleware(req);
-      if (abacResult) {
-        return abacResult; // Return the ABAC response (403, etc.)
-      }
-    }
+    // NOTE: ABAC permission checks are now handled in individual API route handlers
+    // to keep middleware lightweight and under Vercel's 1MB Edge Runtime limit
   }
   
   return NextResponse.next();
