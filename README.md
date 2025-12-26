@@ -33,7 +33,7 @@ AI-powered SaaS platform for generating **content (text, images, voice, video)**
 
 ```bash
 # Clone the repository
-git clone https://github.com/abdelkabirouadoukou/app.git
+git clone https://github.com/ThinkTapFast/app.git
 cd app
 
 # Install dependencies
@@ -55,9 +55,9 @@ Visit [http://localhost:3000](http://localhost:3000) to see the app.
 
 ## 🔗 Related Repositories
 
-- 🌐 [Marketing Site](https://github.com/abdelkabirouadoukou/marketing-site) - Astro landing page
-- 📝 [Blog](https://github.com/abdelkabirouadoukou/blog) - Content & tutorials
-- 📘 [Documentation](https://github.com/abdelkabirouadoukou/docs) - Developer guides
+- 🌐 [Marketing Site](https://github.com/ThinkTapFast/marketing-site) - Astro landing page
+- 📝 [Blog](https://github.com/ThinkTapFast/blog) - Content & tutorials
+- 📘 [Documentation](https://github.com/ThinkTapFast/docs) - Developer guides
 
 ## 📁 Project Structure
 
@@ -78,11 +78,52 @@ Visit [http://localhost:3000](http://localhost:3000) to see the app.
 
 ## 🤝 Contributing
 
-This is a private repository. Only authorized organization members can access this project. For bug reports or feature requests, please contact the team via GitHub or your organization admin.
+**This is a real-world SaaS project built by a CS student** – open for learning, collaboration, and portfolio showcase! 🎓
+
+We welcome contributions:
+
+- 🐛 **Bug reports** - Help identify and fix issues
+- 💡 **Feature suggestions** - Share your ideas
+- 🔧 **Code improvements** - Fork, improve, and submit PRs
+- 📖 **Documentation** - Make it easier for others to learn
+- ⭐ **Star the repo** - Show your support!
+
+### How to Contribute:
+
+1. Fork this repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+All contributions are welcome and appreciated! 🙌
 
 ## 📄 License
 
-Private - Access restricted to authorized organization members. All rights reserved.
+**Fair Source License - Non-Commercial Use**
+
+This project is source-available with the following terms:
+
+### ✅ You CAN:
+
+- View and study the code for **learning** and **educational purposes**
+- Fork the repository to **contribute improvements**
+- Use the code for **personal projects** and **portfolio showcase**
+- Submit pull requests with enhancements
+
+### ❌ You CANNOT:
+
+- Use this code to run a **competing SaaS business**
+- Sell or redistribute this software commercially
+- Remove copyright notices or claim this work as your own
+- Deploy this as a paid service without permission
+
+**Why this license?**
+I'm a CS student building in public to showcase my skills and learn from the community. You can learn from my code, contribute to it, and use it for educational purposes – but please don't steal my business idea. Let's build together! 🚀
+
+For commercial licensing or partnerships, please [open an issue](../../issues) or contact me directly.
+
+© 2025 ThinkTapFast. All commercial rights reserved.
 
 ---
 

@@ -1,0 +1,63 @@
+Fair Source License - Non-Commercial Use
+Copyright (c) 2025 ThinkTapFast
+
+## License Grant
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to use,
+copy, modify, and distribute the Software for NON-COMMERCIAL purposes only,
+subject to the following conditions:
+
+## Permitted Use
+
+You MAY:
+
+1. View, study, and learn from the source code
+2. Fork the repository to contribute improvements
+3. Use the code for personal, educational, or portfolio projects
+4. Submit pull requests and contribute to the project
+5. Share the code with others for educational purposes
+
+## Prohibited Use
+
+You MAY NOT:
+
+1. Use this Software to operate a competing SaaS business
+2. Sell, license, or redistribute this Software commercially
+3. Deploy this Software as a paid service or product
+4. Remove or modify copyright notices
+5. Claim this work as your own
+6. Use this Software in any way that generates revenue without explicit
+   written permission from the copyright holder
+
+## Commercial Licensing
+
+For commercial use, including but not limited to running a SaaS business,
+enterprise deployment, or any revenue-generating activity, you must obtain
+a separate commercial license. Contact the copyright holder for licensing
+inquiries.
+
+## Attribution
+
+If you use portions of this code in your own projects, you must provide
+clear attribution to ThinkTapFast and include a link to the original
+repository: https://github.com/ThinkTapFast/app
+
+## Contributions
+
+By submitting a pull request or contribution to this project, you agree that
+your contribution will be licensed under the same terms as this license and
+that you have the right to submit the contribution.
+
+## Disclaimer
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+For questions, commercial licensing, or partnerships:
+Open an issue at: https://github.com/ThinkTapFast/app/issues
